@@ -54,6 +54,19 @@
   .rang input[type=range]::-moz-range-thumb { pointer-events: auto; width: 16px; height: 16px; border-radius: 50%; background: var(--blau); border: none; cursor: pointer; }
   #rang-txt { font-size: 13px; font-weight: normal; }
   .resultats { margin-bottom: 15px; font-size: 14px; }
+  /* Pantalles de portàtil: taula més compacta perquè es vegin pàgines i botons */
+  @media (max-width: 1500px) {
+    img.portada { height: 130px; }
+    th, td { padding: 4px 6px; font-size: 13px; }
+    td:nth-child(3), td:nth-child(4) { white-space: normal; max-width: 200px; }
+    th:first-child, td:first-child { width: auto; }
+    .icona { padding: 2px 6px; font-size: 14px; }
+    main { padding: 12px; }
+  }
+  @media (max-width: 1100px) {
+    img.portada { height: 100px; }
+    td:nth-child(3), td:nth-child(4) { max-width: 150px; }
+  }
   .resultat { background: #fff; padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; border-left: 4px solid var(--blau); }
   .buit { text-align: center; color: #777; padding: 20px; }
 </style>
