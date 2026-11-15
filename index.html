@@ -191,6 +191,26 @@
 
   // ---------- Pantalla ----------
 
+  // Si Open Library no té la portada, es prova Google Books (més cobertura en llibres en català i castellà)
+  const cachePortades = new Map();
+
+  async function portadaAlternativa(img) {
+    if (img.dataset.provada) { img.style.visibility = 'hidden'; return; }
+    img.dataset.provada = '1';
+    const isbn = img.dataset.isbn;
+    try {
+      if (!cachePortades.has(isbn)) {
+        const resposta = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+        const dades = await resposta.json();
+        const enllac = dades.items?.[0]?.volumeInfo?.imageLinks?.thumbnail || '';
+        cachePortades.set(isbn, enllac.replace(/^http:/, 'https:'));
+      }
+      const url = cachePortades.get(isbn);
+      if (url) { img.src = url; return; }
+    } catch (err) { /* sense portada */ }
+    img.style.visibility = 'hidden';
+  }
+
   let rangTocat = false;
 
   function actualitzaRang() {
@@ -232,7 +252,7 @@
       ? `<tr><td class="buit" colspan="9">No hi ha llibres per mostrar.</td></tr>`
       : llista.map(l => `
         <tr>
-          <td><img class="portada" src="https://covers.openlibrary.org/b/isbn/${soloIsbn(l.isbn)}-M.jpg" alt="" onerror="this.style.visibility='hidden'"></td>
+          <td><img class="portada" data-isbn="${soloIsbn(l.isbn)}" src="https://covers.openlibrary.org/b/isbn/${soloIsbn(l.isbn)}-M.jpg" alt="" onerror="portadaAlternativa(this)"></td>
           <td><strong>${esc(l.isbn)}</strong></td>
           <td><strong>${esc(l.titol)}</strong></td>
           <td>${esc(l.autor)}</td>
