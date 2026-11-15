@@ -47,6 +47,8 @@
   .rang input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 16px; height: 16px; border-radius: 50%; background: var(--blau); cursor: pointer; }
   .rang input[type=range]::-moz-range-thumb { pointer-events: auto; width: 16px; height: 16px; border-radius: 50%; background: var(--blau); border: none; cursor: pointer; }
   #rang-txt { font-size: 13px; font-weight: normal; }
+  .resultats { margin-bottom: 15px; font-size: 14px; }
+  .resultat { background: #fff; padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; border-left: 4px solid var(--blau); }
   .buit { text-align: center; color: #777; padding: 20px; }
 </style>
 </head>
@@ -112,6 +114,7 @@
 
   <div class="botons">
     <button type="button" id="busca">Buscar dades per ISBN</button>
+    <button type="button" id="cerca-titol">Buscar per títol i autor</button>
     <button type="submit">Guardar llibre</button>
     <button type="button" id="buida">Netejar formulari</button>
     <button type="button" id="completa-tots">Completar tots els buits per ISBN</button>
@@ -123,6 +126,8 @@
     <button type="button" id="oblida-codi">Oblidar el codi d'edició</button>
   </div>
 </form>
+
+<div id="resultats-cerca" class="resultats"></div>
 
 <div class="taula-wrap">
 <table>
@@ -323,6 +328,58 @@
   }
 
   $('isbn').addEventListener('change', () => buscaDadesIsbn(true));
+
+  let resultatsCercaList = [];
+
+  async function cercaPerTitolAutor() {
+    const titol = $('titol').value.trim();
+    const autor = $('autor').value.trim();
+    if (!titol) { alert("Escriu almenys el títol (l'autor és opcional)."); return; }
+
+    const q = `intitle:${titol}` + (autor ? `+inauthor:${autor}` : '');
+    $('resultats-cerca').innerHTML = 'Cercant...';
+    try {
+      const resposta = await fetch(`https://www.googleapis.com/books/v1/volumes?maxResults=6&q=${encodeURIComponent(q)}`);
+      const dades = await resposta.json();
+      resultatsCercaList = dades.items || [];
+      if (resultatsCercaList.length === 0) {
+        $('resultats-cerca').innerHTML = "No s'ha trobat cap llibre amb aquestes dades.";
+        return;
+      }
+      $('resultats-cerca').innerHTML = resultatsCercaList.map((it, i) => {
+        const v = it.volumeInfo;
+        const ids = v.industryIdentifiers || [];
+        const isbn = (ids.find(x => x.type === 'ISBN_13') || ids.find(x => x.type === 'ISBN_10') || {}).identifier || '';
+        return `<div class="resultat">
+          <strong>${esc(v.title)}</strong> · ${esc((v.authors || []).join(', '))}
+          ${v.publishedDate ? '· ' + esc(v.publishedDate) : ''}
+          ${v.pageCount ? '· ' + v.pageCount + ' pàg.' : ''}
+          ${isbn ? '· ISBN ' + esc(isbn) : ''}
+          <button type="button" class="usa" data-i="${i}">Usar aquest</button>
+        </div>`;
+      }).join('') + `<button type="button" id="tanca-resultats">Tancar</button>`;
+    } catch (err) {
+      $('resultats-cerca').innerHTML = "No s'ha pogut connectar amb Google Books.";
+    }
+  }
+
+  $('resultats-cerca').addEventListener('click', e => {
+    if (e.target.id === 'tanca-resultats') { $('resultats-cerca').innerHTML = ''; return; }
+    if (!e.target.classList.contains('usa')) return;
+
+    const v = resultatsCercaList[e.target.dataset.i].volumeInfo;
+    const ids = v.industryIdentifiers || [];
+    const isbn = (ids.find(x => x.type === 'ISBN_13') || ids.find(x => x.type === 'ISBN_10') || {}).identifier || '';
+
+    if (isbn) $('isbn').value = isbn;
+    $('titol').value = v.title || '';
+    $('autor').value = (v.authors || []).join(', ');
+    if (v.pageCount) $('pagines').value = v.pageCount;
+    mostraSuggeriments((v.categories || []).map(name => ({ name })));
+    $('resultats-cerca').innerHTML = '';
+  });
+
+  $('cerca-titol').addEventListener('click', cercaPerTitolAutor);
   $('busca').addEventListener('click', () => buscaDadesIsbn(false));
 
   async function completaTots() {
