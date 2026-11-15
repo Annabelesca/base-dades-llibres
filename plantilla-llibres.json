@@ -1,0 +1,22 @@
+[
+  {
+    "_comentari": "EXEMPLE: copia aquest bloc i omple'l amb un llibre nou. Si no saps un camp, deixa'l buit (\"\"). Camps: isbn (text, amb o sense guions); titol (obligatori); autor (noms separats per comes); tapa: 'Dura' o 'Blanda'; lletra: 'Imprenta', 'Lligada', 'De pal', 'De pal + lligada' o 'Lligada + imprenta'; tematica: text lliure (la pàgina en suggereix); pagines: número o buit. Els camps que comencen per '_' són només instruccions: la pàgina els ignora en importar.",
+    "isbn": "978-84-000-0000-0",
+    "titol": "Títol del llibre",
+    "autor": "Nom Autor, Nom Il·lustrador",
+    "tapa": "Dura",
+    "lletra": "Imprenta",
+    "tematica": "Emocions",
+    "pagines": 24
+  },
+  {
+    "_comentari": "EXEMPLE 2: llibre sense ISBN. Pots deixar isbn buit; només es guarda si té títol.",
+    "isbn": "",
+    "titol": "Títol sense ISBN",
+    "autor": "",
+    "tapa": "Blanda",
+    "lletra": "De pal",
+    "tematica": "",
+    "pagines": ""
+  }
+]
