@@ -38,7 +38,14 @@
   table { width: 100%; border-collapse: collapse; background: #fff; }
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; font-size: 14px; vertical-align: middle; }
   th { background: #ddd; }
-  img.portada { width: 50px; height: 70px; object-fit: cover; }
+  img.portada { width: 90px; height: 130px; object-fit: cover; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .icona { padding: 4px 8px; font-size: 16px; line-height: 1; background: #eee; color: #333; border: 1px solid #ccc; }
+  .rang { position: relative; height: 24px; width: 220px; margin-top: 6px; }
+  .rang::before { content: ''; position: absolute; left: 0; right: 0; top: 10px; height: 4px; background: #ccc; border-radius: 2px; }
+  .rang input[type=range] { position: absolute; left: 0; top: 0; width: 100%; height: 24px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+  .rang input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 16px; height: 16px; border-radius: 50%; background: var(--blau); cursor: pointer; }
+  .rang input[type=range]::-moz-range-thumb { pointer-events: auto; width: 16px; height: 16px; border-radius: 50%; background: var(--blau); border: none; cursor: pointer; }
+  #rang-txt { font-size: 13px; font-weight: normal; }
   .buit { text-align: center; color: #777; padding: 20px; }
 </style>
 </head>
@@ -71,6 +78,15 @@
   </label>
   <label>Temàtica
     <select id="filtre-tematica"><option value="">Totes</option></select>
+  </label>
+  <label>Nº pàgines
+    <div>
+      <span id="rang-txt">Totes</span>
+      <div class="rang">
+        <input type="range" id="pag-min" min="0" max="0" value="0">
+        <input type="range" id="pag-max" min="0" max="0" value="0">
+      </div>
+    </div>
   </label>
 </div>
 
@@ -174,13 +190,41 @@
 
   // ---------- Pantalla ----------
 
+  let rangTocat = false;
+
+  function actualitzaRang() {
+    const pags = llibres.map(l => Number(l.pagines)).filter(n => n > 0);
+    const maxim = pags.length ? Math.max(...pags) : 0;
+    const a = $('pag-min'), b = $('pag-max');
+    a.max = b.max = maxim;
+    if (!rangTocat) { a.value = 0; b.value = maxim; }
+    $('rang-txt').textContent = rangTocat ? `${a.value} – ${b.value} pàg.` : 'Totes';
+  }
+
+  function enRang(l) {
+    if (!rangTocat) return true;
+    const n = Number(l.pagines);
+    return n >= Number($('pag-min').value) && n <= Number($('pag-max').value);
+  }
+
+  function movRang(e) {
+    rangTocat = true;
+    const a = $('pag-min'), b = $('pag-max');
+    if (Number(a.value) > Number(b.value)) {
+      if (e.target === a) a.value = b.value; else b.value = a.value;
+    }
+    pinta();
+  }
+
   function pinta() {
+    actualitzaRang();
     const q = $('cerca').value.trim().toLowerCase();
     const llista = llibres
       .filter(l => Object.values(l).join(' ').toLowerCase().includes(q))
       .filter(l => !$('filtre-tapa').value || l.tapa === $('filtre-tapa').value)
       .filter(l => !$('filtre-lletra').value || l.lletra === $('filtre-lletra').value)
       .filter(l => !$('filtre-tematica').value || l.tematica === $('filtre-tematica').value)
+      .filter(enRang)
       .sort((a, b) => String(a.titol).localeCompare(String(b.titol), 'ca'));
 
     $('cos').innerHTML = llista.length === 0
@@ -188,16 +232,16 @@
       : llista.map(l => `
         <tr>
           <td><img class="portada" src="https://covers.openlibrary.org/b/isbn/${soloIsbn(l.isbn)}-M.jpg" alt="" onerror="this.style.visibility='hidden'"></td>
-          <td>${esc(l.isbn)}</td>
-          <td>${esc(l.titol)}</td>
+          <td><strong>${esc(l.isbn)}</strong></td>
+          <td><strong>${esc(l.titol)}</strong></td>
           <td>${esc(l.autor)}</td>
           <td>${esc(l.tapa)}</td>
           <td>${esc(l.lletra)}</td>
           <td>${esc(l.tematica)}</td>
           <td>${esc(l.pagines)}</td>
           <td>
-            <button onclick="edita('${esc(l.id)}')">Editar</button>
-            <button onclick="esborra('${esc(l.id)}')">Esborrar</button>
+            <button class="icona" title="Editar" aria-label="Editar" onclick="edita('${esc(l.id)}')">✏️</button>
+            <button class="icona" title="Esborrar" aria-label="Esborrar" onclick="esborra('${esc(l.id)}')">🗑️</button>
           </td>
         </tr>`).join('');
 
@@ -393,6 +437,8 @@
   $('completa-tots').addEventListener('click', completaTots);
   $('buida').addEventListener('click', buida);
   $('cerca').addEventListener('input', pinta);
+  $('pag-min').addEventListener('input', movRang);
+  $('pag-max').addEventListener('input', movRang);
   ['filtre-tapa', 'filtre-lletra', 'filtre-tematica'].forEach(id => $(id).addEventListener('change', pinta));
 
   carrega();
